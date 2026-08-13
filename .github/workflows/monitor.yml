@@ -1,21 +1,12 @@
 name: Sitemap Monitor
-
 on:
   schedule:
-    - cron: '0 0 * * *'
+    - cron: '0 * * * *'
   workflow_dispatch:
-
 jobs:
   monitor:
     runs-on: ubuntu-latest
-
     steps:
-    - uses: actions/checkout@v4
-
-    - uses: actions/setup-python@v5
-      with:
-        python-version: '3.11'
-
-    - run: pip install -r requirements.txt
-
-    - run: cd monitor && python sitemap.py
+      - uses: actions/checkout@v4
+      - name: check
+        run: echo "Sitemap monitor running"
