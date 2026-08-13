@@ -1,0 +1,12 @@
+[
+  {
+    "id":1,
+    "name":"加密货币",
+    "color":"orange"
+  },
+  {
+    "id":2,
+    "name":"工具站",
+    "color":"blue"
+  }
+]
