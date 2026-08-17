@@ -1,0 +1,11 @@
+create extension if not exists pgcrypto;
+create table public.groups(id uuid primary key default gen_random_uuid(),user_id uuid not null default auth.uid() references auth.users(id) on delete cascade,name text not null,created_at timestamptz default now(),unique(user_id,name));
+create table public.websites(id uuid primary key default gen_random_uuid(),user_id uuid not null default auth.uid() references auth.users(id) on delete cascade,group_id uuid references public.groups(id) on delete set null,name text not null,home_url text not null,sitemap_url text,status text default 'pending' check(status in('pending','ok','error')),last_total integer default 0,last_error text,last_scanned_at timestamptz,robots_hash text,created_at timestamptz default now());
+create table public.scan_history(id bigint generated always as identity primary key,website_id uuid not null references public.websites(id) on delete cascade,user_id uuid not null references auth.users(id) on delete cascade,scanned_at timestamptz default now(),status text not null,total_urls integer default 0,added_count integer default 0,removed_count integer default 0,robots_changed boolean default false,error text);
+create table public.url_snapshots(website_id uuid not null references public.websites(id) on delete cascade,url text not null,url_hash text not null,first_seen_at timestamptz default now(),last_seen_at timestamptz default now(),active boolean default true,primary key(website_id,url_hash));
+alter table public.groups enable row level security; alter table public.websites enable row level security; alter table public.scan_history enable row level security; alter table public.url_snapshots enable row level security;
+create policy groups_owner on public.groups for all using(auth.uid()=user_id) with check(auth.uid()=user_id);
+create policy websites_owner on public.websites for all using(auth.uid()=user_id) with check(auth.uid()=user_id);
+create policy history_owner on public.scan_history for select using(auth.uid()=user_id);
+create policy snapshots_owner on public.url_snapshots for select using(exists(select 1 from public.websites w where w.id=website_id and w.user_id=auth.uid()));
+create index history_site_time on public.scan_history(website_id,scanned_at desc); create index snapshots_active on public.url_snapshots(website_id,active);

@@ -1,11 +1,23 @@
-name: Sitemap Monitor
+name: Scan sitemaps
 on:
- schedule:
-  - cron: '0 * * * *'
- workflow_dispatch:
+  schedule:
+    - cron: '17 * * * *'
+  workflow_dispatch:
+concurrency: sitemap-scan
+permissions:
+  contents: read
 jobs:
- monitor:
-  runs-on: ubuntu-latest
-  steps:
-   - uses: actions/checkout@v4
-   - run: echo monitor running
+  scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12', cache: pip}
+      - run: pip install -r requirements.txt
+      - run: python scanner.py
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}

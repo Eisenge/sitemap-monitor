@@ -1,19 +1,33 @@
 # Sitemap Monitor
 
-一个基于 GitHub Actions 的 Sitemap 变更监控工具。
+GitHub Pages 中文监控后台 + Supabase 免费数据库/Auth + GitHub Actions 每小时扫描，不需要服务器。支持分组/网站真实 CRUD、自动发现 robots.txt 中的全部 Sitemap、sitemap index 和嵌套 sitemap、URL 新增/删除/总量历史、404/超时/XML 异常、robots.txt 变化及 Telegram 通知。
 
-## 功能
-- 定时检查 Sitemap
-- 检测新增 URL
-- 检测删除 URL
-- Telegram 通知
-- 支持 sitemap index
+## 一次性配置（约 10 分钟）
 
-## 使用步骤
-1. 上传整个项目到 GitHub
-2. 打开 Actions
-3. 设置 Secrets:
-   - TELEGRAM_TOKEN
-   - TELEGRAM_CHAT_ID
-4. 修改 config.json 添加需要监控的 sitemap
-5. 等待 GitHub Actions 自动运行
+1. 在 Supabase 新建免费项目。打开 **SQL Editor**，复制并运行 `supabase/schema.sql`。
+2. 打开 **Authentication → Providers → Email**。个人使用可关闭 Confirm email，减少一次邮件确认。
+3. GitHub 仓库打开 **Settings → Secrets and variables → Actions**，添加：
+   - `SUPABASE_URL`：Supabase Project URL
+   - `SUPABASE_ANON_KEY`：Supabase anon/public key
+   - `SUPABASE_SERVICE_ROLE_KEY`：Supabase service_role key（只能放 Secret，不能放网页）
+   - `TELEGRAM_BOT_TOKEN`、`TELEGRAM_CHAT_ID`：可选，不用 Telegram 可不填
+4. GitHub 打开 **Settings → Pages → Build and deployment**，Source 选择 **GitHub Actions**。
+5. 打开 **Actions → Deploy dashboard → Run workflow**。完成后访问 `https://Eisenge.github.io/sitemap-monitor/`，点“首次使用：创建账号”。
+6. 在网页添加分组、网站；然后运行一次 **Actions → Scan sitemaps → Run workflow**。以后每小时自动扫描。
+
+## Telegram（可选）
+
+联系 `@BotFather` 创建 bot 并取得 token。给 bot 发消息后访问 `https://api.telegram.org/bot<TOKEN>/getUpdates`，从 `chat.id` 取得 Chat ID。仅在 URL/robots 变化或扫描异常时通知。
+
+## 安全与 Pages 子路径
+
+网页只使用 anon key，并由 Supabase RLS 限制为当前账号数据；service-role key 只在 GitHub Actions Secrets 中。静态文件全部采用相对路径，原生兼容 `/sitemap-monitor/`，无需手改 base path。
+
+## 本地测试
+
+```bash
+python3 -m pip install -r requirements.txt pytest
+pytest -q
+```
+
+本地预览时，将 `site/config.example.js` 复制成 `site/config.js` 并填写 URL/anon key，再运行 `python3 -m http.server 8080 -d site`；`site/config.js` 已被 git 忽略。
