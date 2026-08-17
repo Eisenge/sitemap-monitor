@@ -2,9 +2,12 @@
 
 GitHub Pages 中文监控后台 + Supabase 免费数据库/Auth + GitHub Actions 每小时扫描，不需要服务器。支持分组/网站真实 CRUD、自动发现 robots.txt 中的全部 Sitemap、sitemap index 和嵌套 sitemap、URL 新增/删除/总量历史、404/超时/XML 异常、robots.txt 变化及 Telegram 通知。
 
+新增 URL 会进入页面分析队列：每次扫描最多抓取 25 个尚未分析的 HTML 页面，保存 Title、Meta Description、H1、语言和本地提取的中英文内容关键词。Dashboard 会聚合近期关键词并列出竞品新页面；这些是页面内容信号，不冒充搜索量或 KD。
+
 ## 一次性配置（约 10 分钟）
 
 1. 在 Supabase 新建免费项目。打开 **SQL Editor**，复制并运行 `supabase/schema.sql`。
+   已部署旧版 schema 的项目，再额外运行一次 `supabase/keyword_analysis.sql`。
 2. 打开 **Authentication → Providers → Email**。个人使用可关闭 Confirm email，减少一次邮件确认。
 3. GitHub 仓库打开 **Settings → Secrets and variables → Actions**，添加：
    - `SUPABASE_URL`：Supabase Project URL

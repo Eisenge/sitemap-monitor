@@ -9,3 +9,7 @@ create policy websites_owner on public.websites for all using(auth.uid()=user_id
 create policy history_owner on public.scan_history for select using(auth.uid()=user_id);
 create policy snapshots_owner on public.url_snapshots for select using(exists(select 1 from public.websites w where w.id=website_id and w.user_id=auth.uid()));
 create index history_site_time on public.scan_history(website_id,scanned_at desc); create index snapshots_active on public.url_snapshots(website_id,active);
+create table public.page_insights(website_id uuid not null references public.websites(id) on delete cascade,user_id uuid not null references auth.users(id) on delete cascade,url text not null,url_hash text not null,title text,meta_description text,h1 text,language text,keywords jsonb not null default '[]'::jsonb,analyzed_at timestamptz not null default now(),error text,primary key(website_id,url_hash));
+alter table public.page_insights enable row level security;
+create policy insights_owner on public.page_insights for select using(auth.uid()=user_id);
+create index insights_time on public.page_insights(user_id,analyzed_at desc);
