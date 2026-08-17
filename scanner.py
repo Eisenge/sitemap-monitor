@@ -4,7 +4,11 @@ import requests
 
 BASE=os.environ.get('SUPABASE_URL','').rstrip('/')
 KEY=os.environ.get('SUPABASE_SERVICE_ROLE_KEY','')
-HEAD={'apikey':KEY,'Authorization':f'Bearer {KEY}','Content-Type':'application/json','Prefer':'return=representation'}
+HEAD={'apikey':KEY,'Content-Type':'application/json','Prefer':'return=representation'}
+# Legacy service_role keys are JWTs and may also be used as a Bearer token.
+# New sb_secret_ keys authenticate through the apikey header only.
+if KEY.count('.') == 2:
+ HEAD['Authorization']=f'Bearer {KEY}'
 UA={'User-Agent':'SitemapMonitor/1.0 (+GitHub Actions)'}
 
 def api(path,method='GET',data=None,params=None):

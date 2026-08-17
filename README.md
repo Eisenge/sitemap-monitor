@@ -8,8 +8,8 @@ GitHub Pages 中文监控后台 + Supabase 免费数据库/Auth + GitHub Actions
 2. 打开 **Authentication → Providers → Email**。个人使用可关闭 Confirm email，减少一次邮件确认。
 3. GitHub 仓库打开 **Settings → Secrets and variables → Actions**，添加：
    - `SUPABASE_URL`：Supabase Project URL
-   - `SUPABASE_ANON_KEY`：Supabase anon/public key
-   - `SUPABASE_SERVICE_ROLE_KEY`：Supabase service_role key（只能放 Secret，不能放网页）
+   - `SUPABASE_ANON_KEY`：Supabase Publishable key（或旧版 anon key）
+   - `SUPABASE_SERVICE_ROLE_KEY`：Supabase Secret key（或旧版 service_role key；只能放 Secret，不能放网页）
    - `TELEGRAM_BOT_TOKEN`、`TELEGRAM_CHAT_ID`：可选，不用 Telegram 可不填
 4. GitHub 打开 **Settings → Pages → Build and deployment**，Source 选择 **GitHub Actions**。
 5. 打开 **Actions → Deploy dashboard → Run workflow**。完成后访问 `https://Eisenge.github.io/sitemap-monitor/`，点“首次使用：创建账号”。
