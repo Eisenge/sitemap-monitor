@@ -28,8 +28,10 @@ def build_report(groups,sites,history,insights):
   if changed_sites:
    for site in changed_sites:lines.append(f"• {site['name']}：总量 {changes[site['id']][2]}，新增 {changes[site['id']][0]}，删除 {changes[site['id']][1]}")
   else:lines.append('• 最近 24 小时无 URL 变化')
-  if terms:lines.append('关键词：'+', '.join(x for x,_ in terms.most_common(10)))
-  for row in group_pages[:3]:lines.append(f"新页面：{names.get(row['website_id'],'')}｜{row.get('title') or row['url']}")
+  if terms:lines.append('TDK/H1 综合关键词：'+', '.join(x for x,_ in terms.most_common(10)))
+  for row in group_pages[:3]:
+   lines.append(f"新页面：{names.get(row['website_id'],'')}｜{row.get('title') or row['url']}")
+   if row.get('h1'):lines.append(f"  H1：{row['h1'][:160]}")
   for site in group_sites:
    if site['id'] in errors:lines.append(f"⚠️ {site['name']}：{errors[site['id']][-1]}")
  return '\n'.join(lines)[:4000]

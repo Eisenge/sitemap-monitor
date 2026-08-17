@@ -17,10 +17,12 @@ def test_robots_discovery(monkeypatch):
 
 def test_page_parser_and_keywords():
  parser=scanner.PageParser()
- parser.feed('<html><head><title>Bitcoin Trading Guide</title><meta name="description" content="Learn crypto trading strategies"></head><body><h1>Bitcoin Trading</h1><script>ignore noise</script><p>Bitcoin trading strategies for beginners and crypto traders.</p></body></html>')
+ parser.feed('<html><head><title>Bitcoin Trading Guide</title><meta name="description" content="Learn crypto trading strategies"><meta name="keywords" content="low fee exchange, crypto derivatives"></head><body><h1>Bitcoin Trading</h1><script>ignore noise</script><p>Bitcoin trading strategies for beginners and crypto traders.</p></body></html>')
  title=' '.join(parser.title);h1=' '.join(parser.h1);body=' '.join(parser.text)
- terms=[x['term'] for x in scanner.extract_keywords(title,h1,parser.meta,body)]
+ terms=[x['term'] for x in scanner.extract_keywords(title,h1,parser.meta,body,meta_keywords=parser.meta_keywords)]
  assert title=='Bitcoin Trading Guide'
  assert 'Bitcoin Trading'==h1
  assert any('bitcoin' in x for x in terms)
+ assert parser.meta_keywords=='low fee exchange, crypto derivatives'
+ assert any('low fee exchange' in x for x in terms)
  assert 'ignore noise' not in body

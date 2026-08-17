@@ -15,10 +15,11 @@ UA={'User-Agent':'SitemapMonitor/1.0 (+GitHub Actions)'}
 STOP=set('the a an and or for to of in on with from by is are be this that it as at your our you we us can will more new home about into how what why who when where these those their its not all'.split())
 
 class PageParser(HTMLParser):
- def __init__(self): super().__init__(); self.title=[]; self.h1=[]; self.text=[]; self.meta=''; self.stack=[]
+ def __init__(self): super().__init__(); self.title=[]; self.h1=[]; self.text=[]; self.meta=''; self.meta_keywords=''; self.stack=[]
  def handle_starttag(self,tag,attrs):
   self.stack.append(tag); a=dict(attrs)
   if tag=='meta' and (a.get('name','').lower()=='description' or a.get('property','').lower()=='og:description'): self.meta=self.meta or a.get('content','')
+  if tag=='meta' and a.get('name','').lower()=='keywords': self.meta_keywords=a.get('content','')
  def handle_endtag(self,tag):
   if tag in self.stack: self.stack=self.stack[:len(self.stack)-1-self.stack[::-1].index(tag)]
  def handle_data(self,data):
@@ -29,14 +30,14 @@ class PageParser(HTMLParser):
   if 'h1' in self.stack:self.h1.append(s)
   self.text.append(s)
 
-def extract_keywords(title,h1,meta,text,limit=12):
- weighted=Counter(); corpus=' '.join((title,h1,meta,text[:50000])).lower()
+def extract_keywords(title,h1,meta,text,limit=12,meta_keywords=''):
+ weighted=Counter(); corpus=' '.join((title,h1,meta,meta_keywords,text[:50000])).lower()
  words=re.findall(r"[a-z][a-z0-9'-]{2,}",corpus)
  clean=[w for w in words if w not in STOP and not w.isdigit()]
  for n in (1,2,3):
   for i in range(len(clean)-n+1):
    term=' '.join(clean[i:i+n]); weighted[term]+=1+(n-1)*0.8
- for source,boost in ((title,5),(h1,4),(meta,2)):
+ for source,boost in ((title,5),(h1,4),(meta_keywords,4),(meta,2)):
   low=source.lower()
   for term in list(weighted):
    if term in low: weighted[term]+=boost
@@ -56,7 +57,7 @@ def analyze_page(site,url):
   r=get(url); ctype=r.headers.get('content-type','')
   if 'html' not in ctype.lower():raise RuntimeError(f'非 HTML 页面: {ctype}')
   p=PageParser();p.feed(r.text[:1000000]);title=' '.join(p.title)[:500];h1=' | '.join(p.h1[:3])[:1000];meta=p.meta[:1000];body=' '.join(p.text)
-  row.update({'title':title,'meta_description':meta,'h1':h1,'language':'zh' if re.search(r'[\u3400-\u9fff]',body) else 'en','keywords':extract_keywords(title,h1,meta,body),'error':None})
+  row.update({'title':title,'meta_description':meta,'h1':h1,'language':'zh' if re.search(r'[\u3400-\u9fff]',body) else 'en','keywords':extract_keywords(title,h1,meta,body,meta_keywords=p.meta_keywords),'error':None})
  except Exception as e:row.update({'keywords':[],'error':str(e)[:1000]})
  h={**HEAD,'Prefer':'resolution=merge-duplicates'}
  r=requests.post(f'{BASE}/rest/v1/page_insights?on_conflict=website_id,url_hash',headers=h,json=row,timeout=30);r.raise_for_status()
