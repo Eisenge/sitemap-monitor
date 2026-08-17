@@ -1,5 +1,6 @@
-import os, time
+import os, smtplib, time
 from collections import Counter, defaultdict
+from email.message import EmailMessage
 import requests
 
 BASE=os.environ.get('SUPABASE_URL','').rstrip('/');KEY=os.environ.get('SUPABASE_SERVICE_ROLE_KEY','')
@@ -27,9 +28,21 @@ def build_report(sites,history,insights):
   for row in new_pages[:10]:lines.append(f"• {names.get(row['website_id'],'')}｜{row.get('title') or row['url']}")
  if errors:lines.extend(['','⚠️ 异常',*('• '+x for x in errors[:10])])
  return '\n'.join(lines)[:4000]
+def send_email(message):
+ host=os.getenv('SMTP_HOST');username=os.getenv('SMTP_USERNAME');password=os.getenv('SMTP_PASSWORD');recipient=os.getenv('REPORT_EMAIL_TO')
+ if not all((host,username,password,recipient)):return False
+ port=int(os.getenv('SMTP_PORT','465'));mail=EmailMessage();mail['Subject']=f"Sitemap Monitor 日报 {time.strftime('%Y-%m-%d')}";mail['From']=os.getenv('REPORT_EMAIL_FROM',username);mail['To']=recipient;mail.set_content(message)
+ if port==465:
+  with smtplib.SMTP_SSL(host,port,timeout=30) as smtp:smtp.login(username,password);smtp.send_message(mail)
+ else:
+  with smtplib.SMTP(host,port,timeout=30) as smtp:smtp.starttls();smtp.login(username,password);smtp.send_message(mail)
+ return True
 def main():
  if not BASE or not KEY:raise SystemExit('缺少 Supabase 配置')
- since=time.strftime('%Y-%m-%dT%H:%M:%SZ',time.gmtime(time.time()-86400));sites=api('websites',{'select':'id,name,status,last_total','order':'name'});history=api('scan_history',{'select':'*','scanned_at':f'gte.{since}','order':'scanned_at.asc'});insights=api('page_insights',{'select':'*','analyzed_at':f'gte.{since}','order':'analyzed_at.desc'});message=build_report(sites,history,insights);token=os.getenv('TELEGRAM_BOT_TOKEN');chat=os.getenv('TELEGRAM_CHAT_ID')
- if not token or not chat:raise SystemExit('缺少 TELEGRAM_BOT_TOKEN / TELEGRAM_CHAT_ID')
- r=requests.post(f'https://api.telegram.org/bot{token}/sendMessage',json={'chat_id':chat,'text':message,'disable_web_page_preview':True},timeout=20);r.raise_for_status();print('日报发送成功')
+ since=time.strftime('%Y-%m-%dT%H:%M:%SZ',time.gmtime(time.time()-86400));sites=api('websites',{'select':'id,name,status,last_total','order':'name'});history=api('scan_history',{'select':'*','scanned_at':f'gte.{since}','order':'scanned_at.asc'});insights=api('page_insights',{'select':'*','analyzed_at':f'gte.{since}','order':'analyzed_at.desc'});message=build_report(sites,history,insights);token=os.getenv('TELEGRAM_BOT_TOKEN');chat=os.getenv('TELEGRAM_CHAT_ID');sent=[]
+ if token and chat:
+  r=requests.post(f'https://api.telegram.org/bot{token}/sendMessage',json={'chat_id':chat,'text':message,'disable_web_page_preview':True},timeout=20);r.raise_for_status();sent.append('Telegram')
+ if send_email(message):sent.append('邮箱')
+ if not sent:raise SystemExit('未配置 Telegram 或邮箱发送密钥')
+ print('日报发送成功：'+', '.join(sent))
 if __name__=='__main__':main()

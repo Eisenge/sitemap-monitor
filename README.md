@@ -34,3 +34,7 @@ pytest -q
 ```
 
 本地预览时，将 `site/config.example.js` 复制成 `site/config.js` 并填写 URL/anon key，再运行 `python3 -m http.server 8080 -d site`；`site/config.js` 已被 git 忽略。
+
+## 每天 09:00 日报（Telegram + 邮箱）
+
+工作流按北京时间每天 09:00 自动汇总最近 24 小时的 URL 变化、新页面关键词和异常。Telegram 使用上面的两个 Secrets；邮件以 Gmail 为例，再添加：`REPORT_EMAIL_TO`、`SMTP_HOST=smtp.gmail.com`、`SMTP_PORT=465`、`SMTP_USERNAME`、`SMTP_PASSWORD`（Google 应用专用密码）。两种渠道可单独启用。
