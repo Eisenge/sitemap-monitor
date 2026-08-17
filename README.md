@@ -15,7 +15,7 @@ GitHub Pages 中文监控后台 + Supabase 免费数据库/Auth + GitHub Actions
    - `SUPABASE_SERVICE_ROLE_KEY`：Supabase Secret key（或旧版 service_role key；只能放 Secret，不能放网页）
    - `TELEGRAM_BOT_TOKEN`、`TELEGRAM_CHAT_ID`：可选，不用 Telegram 可不填
 4. GitHub 打开 **Settings → Pages → Build and deployment**，Source 选择 **GitHub Actions**。
-5. 打开 **Actions → Deploy dashboard → Run workflow**。完成后访问 `https://Eisenge.github.io/sitemap-monitor/`，点“首次使用：创建账号”。
+5. 打开 **Actions → Deploy dashboard → Run workflow**。完成后访问 `https://Eisenge.github.io/sitemap-monitor/`，输入邮箱并点击邮件里的免密码登录链接。
 6. 在网页添加分组、网站；然后运行一次 **Actions → Scan sitemaps → Run workflow**。以后每小时自动扫描。
 
 ## Telegram（可选）
