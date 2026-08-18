@@ -16,7 +16,12 @@ def build_report(groups,sites,history,insights):
  new_pages=[]
  for row in insights:
   if not row.get('error'):new_pages.append(row)
- lines=['📊 Sitemap Monitor 分组日报',time.strftime('%Y-%m-%d',time.localtime()),'',f"监控网站：{len(sites)}｜分析页面：{len(new_pages)}｜异常网站：{len(errors)}"]
+ total_added=sum(x[0] for x in changes.values());total_removed=sum(x[1] for x in changes.values())
+ all_terms=Counter(k['term'] for x in new_pages for k in x.get('keywords',[])[:8])
+ active_sites=sum(1 for s in sites if changes[s['id']][0] or changes[s['id']][1])
+ lines=['📊 Sitemap Monitor 分组日报',time.strftime('%Y-%m-%d',time.localtime()),'',
+  '【今日总结】',f"监控 {len(sites)} 个网站｜发生变化 {active_sites} 个｜新增 {total_added}｜删除 {total_removed}｜新页面分析 {len(new_pages)}｜异常 {len(errors)}"]
+ if all_terms:lines.append('今日主要关键词：'+', '.join(x for x,_ in all_terms.most_common(12)))
  sections=[(g['id'],g['name']) for g in groups]
  if any(not s.get('group_id') for s in sites):sections.append((None,'未分组'))
  for group_id,group_name in sections:
@@ -34,6 +39,21 @@ def build_report(groups,sites,history,insights):
    if row.get('h1'):lines.append(f"  H1：{row['h1'][:160]}")
   for site in group_sites:
    if site['id'] in errors:lines.append(f"⚠️ {site['name']}：{errors[site['id']][-1]}")
+ lines.extend(['','【分析】'])
+ if total_added or total_removed:
+  direction='扩张' if total_added>total_removed else '收缩' if total_removed>total_added else '调整'
+  lines.append(f"• 竞品内容整体呈{direction}：新增 {total_added}，删除 {total_removed}。")
+ else:lines.append('• 最近 24 小时 Sitemap 稳定，未发现新增或删除页面。')
+ if all_terms:
+  hot=', '.join(x for x,_ in all_terms.most_common(5));lines.append(f"• 新页面主题集中在：{hot}。这些词值得优先核对搜索意图和现有内容覆盖。")
+ if errors:lines.append(f"• {len(errors)} 个网站扫描异常，可能造成变化漏报，应优先排查。")
+ lines.extend(['','【建议】'])
+ if all_terms:lines.append('1. 从今日高频词中选择 3–5 个与业务最相关的词，检查竞品页面结构、标题和 H1，再决定是否立项。')
+ else:lines.append('1. 今日没有新关键词，继续观察，不建议为了更新而盲目创建内容。')
+ if total_added:lines.append('2. 优先查看新增页面对应的搜索意图，区分产品页、工具页和资讯页，复制有效选题而不是复制文案。')
+ else:lines.append('2. 复查最近一周累计趋势，避免仅凭单日无变化下结论。')
+ if errors:lines.append('3. 修复异常站点后重新扫描，避免日报建立在不完整数据上。')
+ else:lines.append('3. 对连续多日出现的关键词建立选题池，再结合趋势和实际竞争度安排优先级。')
  return '\n'.join(lines)[:4000]
 def send_email(message):
  host=os.getenv('SMTP_HOST');username=os.getenv('SMTP_USERNAME');password=os.getenv('SMTP_PASSWORD');recipient=os.getenv('REPORT_EMAIL_TO')
