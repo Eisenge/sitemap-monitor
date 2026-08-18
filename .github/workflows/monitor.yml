@@ -21,3 +21,8 @@ jobs:
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          HTTP_TIMEOUT: '12'
+          SITE_TIMEOUT: '180'
+          MAX_SITEMAPS: '30'
+          MAX_URLS_PER_SITE: '5000'
+          MAX_PAGE_ANALYSIS: '10'

@@ -86,19 +86,24 @@ def discover(home):
  return text,maps
 
 def crawl(initial):
- pending=list(initial); seen=set(); urls=set(); errors=[]
+ pending=list(initial); seen=set(); urls=set(); errors=[];max_maps=int(os.getenv('MAX_SITEMAPS','30'));max_urls=int(os.getenv('MAX_URLS_PER_SITE','5000'));deadline=time.monotonic()+int(os.getenv('SITE_TIMEOUT','180'))
  while pending:
+  if time.monotonic()>deadline:errors.append('达到单站扫描时间上限');break
   loc=pending.pop(0)
   if loc in seen: continue
-  if len(seen)>=int(os.getenv('MAX_SITEMAPS','500')): raise RuntimeError('Sitemap 数量超过安全限制')
+  if len(seen)>=max_maps:errors.append(f'仅处理前 {max_maps} 个 Sitemap');break
   seen.add(loc)
   try:
    root=ET.fromstring(get(loc).content); tag=root.tag.rsplit('}',1)[-1].lower()
    items=[(x.text or '').strip() for x in root.iter() if x.tag.rsplit('}',1)[-1].lower()=='loc' and x.text]
-   if tag=='sitemapindex': pending.extend(urljoin(loc,x) for x in items)
-   elif tag=='urlset': urls.update(items)
+   if tag=='sitemapindex': pending.extend(urljoin(loc,x) for x in items[:max_maps-len(seen)])
+   elif tag=='urlset':
+    for item in items:
+     urls.add(item)
+     if len(urls)>=max_urls:break
    else: errors.append(f'未知 XML 根节点: {loc}')
   except (requests.RequestException,ET.ParseError) as e: errors.append(f'{loc}: {e}')
+  if len(urls)>=max_urls:errors.append(f'仅保存前 {max_urls} 个 URL');break
  if not urls and errors: raise RuntimeError('; '.join(errors[:3]))
  return urls,errors
 
@@ -128,17 +133,18 @@ def scan(site):
   for x in insights:terms.extend(k['term'] for k in x.get('keywords',[])[:5])
   top=', '.join(k for k,_ in Counter(terms).most_common(10))
   notify(f"🔎 {site['name']}\n总量 {len(urls)}｜新增 {len(added)}｜删除 {len(removed)}"+('\nrobots.txt 已变化' if robots_changed else '')+(f'\n新页面关键词：{top}' if top else ''))
- print(f"OK {site['name']}: total={len(urls)} +{len(added)} -{len(removed)}")
+ print(f"OK {site['name']}: total={len(urls)} +{len(added)} -{len(removed)}",flush=True)
 
 def fail(site,e):
  msg=str(e)[:1000]; now=time.strftime('%Y-%m-%dT%H:%M:%SZ',time.gmtime())
  api('websites','PATCH',{'status':'error','last_error':msg,'last_scanned_at':now},{'id':f"eq.{site['id']}"})
  api('scan_history','POST',{'website_id':site['id'],'user_id':site['user_id'],'status':'error','total_urls':site.get('last_total',0),'error':msg})
- notify(f"❌ {site['name']} Sitemap 扫描失败\n{msg}"); print(f"ERROR {site['name']}: {msg}",file=sys.stderr)
+ notify(f"❌ {site['name']} Sitemap 扫描失败\n{msg}"); print(f"ERROR {site['name']}: {msg}",file=sys.stderr,flush=True)
 
 if __name__=='__main__':
  if not BASE or not KEY: raise SystemExit('缺少 SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY')
  sites=api('websites',params={'select':'*'}) or []
+ if not sites:raise SystemExit('数据库中没有监控网站，停止扫描')
  for site in sites:
   try: scan(site)
   except Exception as e: fail(site,e)

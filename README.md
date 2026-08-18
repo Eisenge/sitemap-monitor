@@ -2,6 +2,8 @@
 
 GitHub Pages 中文监控后台 + Supabase 免费数据库/Auth + GitHub Actions 每小时扫描，不需要服务器。支持分组/网站真实 CRUD、自动发现 robots.txt 中的全部 Sitemap、sitemap index 和嵌套 sitemap、URL 新增/删除/总量历史、404/超时/XML 异常、robots.txt 变化及 Telegram 通知。
 
+为保护免费数据库，每个网站默认最多处理 30 个 Sitemap、保存 5000 个 URL、分析 10 个新页面，并设有 180 秒单站时间上限。
+
 新增 URL 会进入页面分析队列：每次扫描最多抓取 25 个尚未分析的 HTML 页面，保存 Title、Meta Description、H1、语言和本地提取的中英文内容关键词。Dashboard 会聚合近期关键词并列出竞品新页面；这些是页面内容信号，不冒充搜索量或 KD。
 
 ## 一次性配置（约 10 分钟）
