@@ -1,10 +1,10 @@
 # Sitemap Monitor
 
-GitHub Pages 中文监控后台 + Supabase 免费数据库/Auth + GitHub Actions 每小时扫描，不需要服务器。支持分组/网站真实 CRUD、自动发现 robots.txt 中的全部 Sitemap、sitemap index 和嵌套 sitemap、URL 新增/删除/总量历史、404/超时/XML 异常、robots.txt 变化及 Telegram 通知。
+GitHub Pages 中文监控后台 + Supabase 免费数据库/Auth + GitHub Actions 每小时扫描，不需要服务器。支持分组/网站真实 CRUD、自动发现 robots.txt 中的全部 Sitemap、sitemap index 和嵌套 sitemap、URL 新增/删除/总量历史、404/超时/XML 异常、robots.txt 变化及每日合并 Telegram 日报。
 
 为保护免费数据库，每个网站默认最多处理 30 个 Sitemap、保存 5000 个 URL、分析 10 个新页面，并设有 180 秒单站时间上限。
 
-新增 URL 会进入页面分析队列：每次扫描最多抓取 25 个尚未分析的 HTML 页面，保存 Title、Meta Description、H1、语言和本地提取的中英文内容关键词。Dashboard 会聚合近期关键词并列出竞品新页面；这些是页面内容信号，不冒充搜索量或 KD。
+新增 URL 会进入页面分析队列：每次扫描最多抓取 10 个尚未分析的 HTML 页面，保存 Title、Meta Description、H1、语言和本地提取的中英文内容关键词。Dashboard 会聚合近期关键词并列出竞品新页面；这些是页面内容信号，不冒充搜索量或 KD。
 
 ## 一次性配置（约 10 分钟）
 
@@ -22,7 +22,7 @@ GitHub Pages 中文监控后台 + Supabase 免费数据库/Auth + GitHub Actions
 
 ## Telegram（可选）
 
-联系 `@BotFather` 创建 bot 并取得 token。给 bot 发消息后访问 `https://api.telegram.org/bot<TOKEN>/getUpdates`，从 `chat.id` 取得 Chat ID。仅在 URL/robots 变化或扫描异常时通知。
+联系 `@BotFather` 创建 bot 并取得 token。给 bot 发消息后访问 `https://api.telegram.org/bot<TOKEN>/getUpdates`，从 `chat.id` 取得 Chat ID。每小时扫描只写入后台，不单独发消息；每天北京时间 09:00 只发送一条合并日报，集中包含全部网站变化、异常、关键词、分析和建议。
 
 ## 安全与 Pages 子路径
 
@@ -39,4 +39,4 @@ pytest -q
 
 ## 每天 09:00 日报（Telegram + 邮箱）
 
-工作流按北京时间每天 09:00 自动按网站分组汇总最近 24 小时的 URL 新增/删除和异常，并从新增页面的 Title、Meta Description、Meta Keywords、H1 与正文中提取综合关键词，同时列出代表性新页面及 H1。Telegram 使用上面的两个 Secrets；邮件以 Gmail 为例，再添加：`REPORT_EMAIL_TO`、`SMTP_HOST=smtp.gmail.com`、`SMTP_PORT=465`、`SMTP_USERNAME`、`SMTP_PASSWORD`（Google 应用专用密码）。两种渠道可单独启用。
+工作流按北京时间每天 09:00 发送一条合并消息，按网站分组汇总最近 24 小时的 URL 新增/删除和异常，并从新增页面的 Title、Meta Description、Meta Keywords、H1 与正文中提取综合关键词，同时给出总结、分析和建议。Telegram 使用上面的两个 Secrets；邮件以 Gmail 为例，再添加：`REPORT_EMAIL_TO`、`SMTP_HOST=smtp.gmail.com`、`SMTP_PORT=465`、`SMTP_USERNAME`、`SMTP_PASSWORD`（Google 应用专用密码）。两种渠道可单独启用。

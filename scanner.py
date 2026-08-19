@@ -107,10 +107,6 @@ def crawl(initial):
  if not urls and errors: raise RuntimeError('; '.join(errors[:3]))
  return urls,errors
 
-def notify(msg):
- token=os.getenv('TELEGRAM_BOT_TOKEN'); chat=os.getenv('TELEGRAM_CHAT_ID')
- if token and chat: requests.post(f'https://api.telegram.org/bot{token}/sendMessage',json={'chat_id':chat,'text':msg[:4000]},timeout=15).raise_for_status()
-
 def scan(site):
  now=time.strftime('%Y-%m-%dT%H:%M:%SZ',time.gmtime()); robots,maps=discover(site['home_url'])
  rh=hashlib.sha256(robots.encode()).hexdigest(); robots_changed=bool(site.get('robots_hash') and site['robots_hash']!=rh)
@@ -125,21 +121,16 @@ def scan(site):
  for i in range(0,len(rows),500):
   h={**HEAD,'Prefer':'resolution=merge-duplicates'}
   r=requests.post(f'{BASE}/rest/v1/url_snapshots?on_conflict=website_id,url_hash',headers=h,json=rows[i:i+500],timeout=30); r.raise_for_status()
- insights=analyze_pending(site,urls)
+ analyze_pending(site,urls)
  api('websites','PATCH',{'status':'ok','last_total':len(urls),'last_error':'; '.join(warnings[:3]) or None,'last_scanned_at':now,'robots_hash':rh,'sitemap_url':site.get('sitemap_url') or maps[0]},{'id':f"eq.{site['id']}"})
  api('scan_history','POST',{'website_id':site['id'],'user_id':site['user_id'],'status':'ok','total_urls':len(urls),'added_count':len(added),'removed_count':len(removed),'robots_changed':robots_changed})
- if added or removed or robots_changed:
-  terms=[]
-  for x in insights:terms.extend(k['term'] for k in x.get('keywords',[])[:5])
-  top=', '.join(k for k,_ in Counter(terms).most_common(10))
-  notify(f"🔎 {site['name']}\n总量 {len(urls)}｜新增 {len(added)}｜删除 {len(removed)}"+('\nrobots.txt 已变化' if robots_changed else '')+(f'\n新页面关键词：{top}' if top else ''))
  print(f"OK {site['name']}: total={len(urls)} +{len(added)} -{len(removed)}",flush=True)
 
 def fail(site,e):
  msg=str(e)[:1000]; now=time.strftime('%Y-%m-%dT%H:%M:%SZ',time.gmtime())
  api('websites','PATCH',{'status':'error','last_error':msg,'last_scanned_at':now},{'id':f"eq.{site['id']}"})
  api('scan_history','POST',{'website_id':site['id'],'user_id':site['user_id'],'status':'error','total_urls':site.get('last_total',0),'error':msg})
- notify(f"❌ {site['name']} Sitemap 扫描失败\n{msg}"); print(f"ERROR {site['name']}: {msg}",file=sys.stderr,flush=True)
+ print(f"ERROR {site['name']}: {msg}",file=sys.stderr,flush=True)
 
 if __name__=='__main__':
  if not BASE or not KEY: raise SystemExit('缺少 SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY')
